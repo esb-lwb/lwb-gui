@@ -8,7 +8,6 @@
 (ns lwb-gui.actions
   (:require [lwb-gui.consts :as consts]
             [lwb-gui.prefs :as prefs]
-            [seesaw.core :as sc]
             [clojure.java.browse :as browse]
             [lwb-gui.repl.control :as repl]
             [lwb-gui.utils :as utils]
@@ -40,8 +39,9 @@
    Returns true if the file does not exists."
   [app fx]
   (if (.exists fx)
-    (let [rc (JOptionPane/showConfirmDialog (:frame app)
-                                            "File exists, overwrite?" nil JOptionPane/YES_NO_OPTION)]
+    (let [rc (JOptionPane/showConfirmDialog (:frame app) "File exists, overwrite?"
+                                            nil JOptionPane/YES_NO_OPTION
+                                            JOptionPane/QUESTION_MESSAGE (:icon-64 app))]
       (if (= rc JOptionPane/YES_OPTION)
         true
         false))
@@ -85,7 +85,9 @@
   (let [^TextEditorPane edit-area (:edit-area app)
         state (session-state edit-area)
         closable? (if (not (= state :clean))
-                    (let [rc (JOptionPane/showConfirmDialog (:frame app) "Save session?")]
+                    (let [rc (JOptionPane/showConfirmDialog (:frame app) "Save session?"
+                                                            nil JOptionPane/YES_NO_CANCEL_OPTION
+                                                            (:icon-64 app))]
                       (condp = rc
                         JOptionPane/OK_OPTION (if (save-file app) true false)
                         JOptionPane/NO_OPTION true
@@ -128,12 +130,8 @@
         (do
           (.load (:edit-area app) fl "UTF-8")
           (.setText (:edit-label app) (str "Editor - " (.getFileName (:edit-area app)))))
-        (JOptionPane/showMessageDialog (:frame app) (str path " doesn't exist anymore."))))))
-
-; TODO: info is just for testing, delete later
-(defn info [app]
-  (JOptionPane/showMessageDialog nil (str "Info " (session-state (:edit-area app))))
-  (JOptionPane/showMessageDialog nil (str "Info " (.getFileName (:edit-area app)))))
+        (JOptionPane/showMessageDialog (:frame app) (str path " doesn't exist anymore.")
+                                       nil JOptionPane/YES_OPTION (:icon-64 app))))))
 
 ;; Edit -------------------------------------------------------------------------
 (defn comment-out [text-comp]
@@ -180,10 +178,11 @@
 (defn man [topic]
   (browse/browse-url (str consts/lwb-wiki topic)))
 
-(defn about-dlg []
-  (-> (sc/dialog :title "About lwb-gui" :size [400 :by 360] :content consts/about)
-      (sc/pack!)
-      (sc/show!)))
+;; About
+(defn about-dlg [app]
+  (JOptionPane/showMessageDialog (:frame app) consts/about
+                                 "About lwb-gui" JOptionPane/INFORMATION_MESSAGE
+                                 (:icon-128 app)))
 
 ;; Exit ------------------------------------------------------------------------
 (defn exit [app]
@@ -192,10 +191,14 @@
         state (session-state edit-area)]
     (if (not (= state :clean))
       (let [rc (JOptionPane/showConfirmDialog (:frame app) "Save session?"
-                                              "Select Option" JOptionPane/YES_NO_OPTION)]
+                                              "Select Option" JOptionPane/YES_NO_OPTION
+                                              JOptionPane/QUESTION_MESSAGE (:icon-64 app))]
         (if (= rc JOptionPane/OK_OPTION)
           (save-file app)))))
   ; Save history of recent files
-  (prefs/pput "recent-files" (.getFileHistory (:recent-menu app)))
+  (prefs/pput "recent-files" (.getFileHistory (:recent-menu app))))
 
-  )
+(defn exit' [app]
+  ; exit with System.exit
+  (exit app)
+  (System/exit 0))

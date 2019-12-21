@@ -5,14 +5,14 @@
 
 (ns lwb-gui.main
   (:import (javax.swing BorderFactory JFrame JLabel JMenuBar JPanel JTextField SpringLayout JCheckBox JButton
-                        UIManager JMenu JTextArea AbstractAction JWindow JSplitPane JComponent)
+                        UIManager JMenu JTextArea AbstractAction JWindow JSplitPane JComponent JScrollPane ImageIcon)
            (java.awt.event MouseAdapter WindowAdapter ActionListener MouseEvent)
            (java.awt Color Font)
            (org.fife.ui.rsyntaxtextarea SyntaxConstants TextEditorPane)
            (org.fife.ui.rtextarea RTextScrollPane)
            (org.fife.ui.utils RecentFilesMenu)
            (com.apple.eawt Application)
-           (java.awt.desktop QuitHandler QuitResponse AboutHandler))
+           (java.awt.desktop AboutHandler QuitHandler QuitResponse))
   (:require [clojure.set]
             [lwb-gui.actions :as actions]
             [lwb-gui.consts :as consts]
@@ -24,7 +24,8 @@
             [lwb-gui.highlighting :as highlighting]
             [lwb-gui.search :as search]
             [lwb-gui.prefs :as prefs]
-            [lwb-gui.settings :as settings])
+            [lwb-gui.settings :as settings]
+            [clojure.java.io :as io])
   (:gen-class))
 
 (def gap 5)
@@ -90,7 +91,7 @@
                         (utils/awt-event
                           (highlighting/highlight-brackets text-comp good-enclosures bad-brackets)))))
                   (catch Throwable t (utils/awt-event (.printStackTrace t))))))))
-   
+
 ;; Highlighting -----------------------------------------------------------------------------
 (defn activate-caret-highlighter [app]
   (when-let [text-comp (app :edit-area)]
@@ -130,35 +131,35 @@
                               ["ESCAPE" #(search/escape-find app)])))
 
 (defn exit-if-closed [^JWindow f app]
-    (.addWindowListener f
-                        (proxy [WindowAdapter] []
-                          (windowClosing [_]
-                            (actions/exit app)
-                            (System/exit 0)))))
+  (.addWindowListener f
+                      (proxy [WindowAdapter] []
+                        (windowClosing [_]
+                          (actions/exit app)
+                          (System/exit 0)))))
 
 (defn move-caret-to-line
   "Move caret to choosen line"
   [textarea]
-  (let [current-line (fn [] (inc (.getLineOfOffset textarea (.getCaretPosition textarea)))) 
+  (let [current-line (fn [] (inc (.getLineOfOffset textarea (.getCaretPosition textarea))))
         line-str (utils/ask-value "Line number:" "Go to Line")
-        line-num  (Integer.
-                    (if (or (nil? line-str) (nil? (re-find #"\d+" line-str)))
-                      (current-line)
-                      (re-find #"\d+" line-str)))]
-  (utils/scroll-to-line textarea line-num)
-  (.requestFocus textarea)))
+        line-num (Integer.
+                   (if (or (nil? line-str) (nil? (re-find #"\d+" line-str)))
+                     (current-line)
+                     (re-find #"\d+" line-str)))]
+    (utils/scroll-to-line textarea line-num)
+    (.requestFocus textarea)))
 
 (defn attach-global-action-keys [comp app]
   (utils/attach-action-keys comp
                             ["cmd1 PLUS" #(grow-font app)]
                             ["cmd1 MINUS" #(shrink-font app)]
-                            ["cmd1 K"#(.setText (app :repl-area) "")]))
-  
+                            ["cmd1 K" #(.setText (app :repl-area) "")]))
+
 (defn on-window-activation [win fun]
   (.addWindowListener win
-    (proxy [WindowAdapter] []
-      (windowActivated [_]
-        (fun)))))
+                      (proxy [WindowAdapter] []
+                        (windowActivated [_]
+                          (fun)))))
 
 (defn make-edit-area []
   (doto (TextEditorPane.)
@@ -171,14 +172,14 @@
     navigate/attach--keys
     double-click-selector
     actions/setup-autoindent
-     ))
+    ))
 
 (defn load-recent-files [app]
   (let [hl (prefs/pget "recent-files")]
     (if (some? hl)
       (dorun (for [f hl]
                (.addFileToFileHistory (:recent-menu app) f))))
-               ))
+    ))
 
 
 (defn make-recent-menu [app]
@@ -195,6 +196,8 @@
 
 (defn create-app []
   (let [frame (JFrame.)
+        icon-128 (ImageIcon. (io/resource "lwb-128.png"))
+        icon-64 (ImageIcon. (io/resource "lwb-64.png"))
         layout (SpringLayout.)
         edit-panel (JPanel.)
         edit-label (JLabel. "Editor - <unsaved session>")
@@ -217,6 +220,8 @@
                      repl-area
                      repl-label
                      frame
+                     icon-128
+                     icon-64
                      repl-pane
                      search-text-area
                      search-match-case-checkbox
@@ -227,7 +232,7 @@
                      split-pane
                      ))
         doc-scroll-pane (RTextScrollPane. ^TextEditorPane edit-area)
-        recent-menu (make-recent-menu  app)
+        recent-menu (make-recent-menu app)
         app (assoc app :repl (atom nil)
                        :recent-menu recent-menu
                        :settings (load-settings))]
@@ -257,7 +262,7 @@
     (doto pos-label
       (.setFont (Font. "Courier" Font/PLAIN 13)))
     #_(.setSyntaxEditingStyle repl-area
-                            SyntaxConstants/SYNTAX_STYLE_CLOJURE)
+                              SyntaxConstants/SYNTAX_STYLE_CLOJURE)
     (.setSyntaxEditingStyle edit-area
                             SyntaxConstants/SYNTAX_STYLE_CLOJURE)
     (utils/constrain-to-parent split-pane :n gap :w gap :s (- gap) :e (- gap))
@@ -273,7 +278,7 @@
     (setup-search-elements app)
     (activate-caret-highlighter app)
     (utils/attach-action-keys edit-area
-      ["cmd1 ENTER" #(repl/send-selected-to-repl app)])
+                              ["cmd1 ENTER" #(repl/send-selected-to-repl app)])
     (doto repl-area (.setEditable false))
     (dorun (map #(attach-global-action-keys % app)
                 [edit-area repl-area (.getContentPane frame)]))
@@ -304,22 +309,21 @@
                          (utils/add-menu-item "Save" "S" "cmd1 S" #(actions/save-file app))
                          (utils/add-menu-item "Save As.." "A" "cmd1 shift S" #(actions/save-as-file app))
                          (utils/add-menu-item "Close" "C" "cmd1 C" #(actions/close-session app))
-                         (utils/add-menu-item "Info" "" "C" #(actions/info app))
                          )]
       (when-not (utils/is-mac)
-        (utils/add-menu-item session-menu "Exit" "X" nil #(System/exit 0)))
+        (utils/add-menu-item session-menu "Exit" "X" nil #(actions/exit' app)))
       (.add menu-bar session-menu))
     ;; Edit
     (let [edit-menu (doto (JMenu. "Edit")
-                     (utils/add-menu-item "Comment" "C" "cmd1 SEMICOLON" #(actions/toggle-comment (:edit-area app)))
-                     (utils/add-menu-item "Fix indentation" "F" "cmd1 I" #(actions/fix-indent-selected-lines (:edit-area app)))
-                     (utils/add-menu-item "Indent lines" "I" "cmd1 shift RIGHT" #(actions/indent (:edit-area app)))
-                     (utils/add-menu-item "Unindent lines" "D" "cmd1 shift LEFT" #(actions/unindent (:edit-area app)))
-                     (utils/add-menu-item "Go to line..." "G" "cmd1 L" #(move-caret-to-line (:edit-area app)))
-                     (.addSeparator)
-                     (utils/add-menu-item "Find" "F" "cmd1 F" #(search/start-find app))
-                     (utils/add-menu-item "Find next" "N" "cmd1 G" #(search/highlight-step app false))
-                     (utils/add-menu-item "Find prev" "P" "cmd1 shift G" #(search/highlight-step app true)))]
+                      (utils/add-menu-item "Comment" "C" "cmd1 SEMICOLON" #(actions/toggle-comment (:edit-area app)))
+                      (utils/add-menu-item "Fix indentation" "F" "cmd1 I" #(actions/fix-indent-selected-lines (:edit-area app)))
+                      (utils/add-menu-item "Indent lines" "I" "cmd1 shift RIGHT" #(actions/indent (:edit-area app)))
+                      (utils/add-menu-item "Unindent lines" "D" "cmd1 shift LEFT" #(actions/unindent (:edit-area app)))
+                      (utils/add-menu-item "Go to line..." "G" "cmd1 L" #(move-caret-to-line (:edit-area app)))
+                      (.addSeparator)
+                      (utils/add-menu-item "Find" "F" "cmd1 F" #(search/start-find app))
+                      (utils/add-menu-item "Find next" "N" "cmd1 G" #(search/highlight-step app false))
+                      (utils/add-menu-item "Find prev" "P" "cmd1 shift G" #(search/highlight-step app true)))]
       (.add menu-bar edit-menu))
     ;; REPL
     (let [repl-menu (doto (JMenu. "REPL")
@@ -337,16 +341,16 @@
       (.add menu-bar options-menu))
     ;; Manual
     (let [man-menu (doto (JMenu. "Manual")
-                      (utils/add-menu-item "Propositional Logic" "" nil #(actions/man "prop"))
-                      (utils/add-menu-item "Predicate Logic" "" nil #(actions/man "pred"))
-                      (utils/add-menu-item "Linear Temporal Logic" "" nil #(actions/man "ltl"))
-                      (utils/add-menu-item "Natural Deduction" "" nil #(actions/man "nd"))
-                      (utils/add-menu-item "Combinatory Logic" "" nil #(actions/man "cl")))]
+                     (utils/add-menu-item "Propositional Logic" "" nil #(actions/man "prop"))
+                     (utils/add-menu-item "Predicate Logic" "" nil #(actions/man "pred"))
+                     (utils/add-menu-item "Linear Temporal Logic" "" nil #(actions/man "ltl"))
+                     (utils/add-menu-item "Natural Deduction" "" nil #(actions/man "nd"))
+                     (utils/add-menu-item "Combinatory Logic" "" nil #(actions/man "cl")))]
       (when-not (utils/is-mac)
         (.addSeparator man-menu)
-        (utils/add-menu-item man-menu "About" "A" nil #(actions/about-dlg)))
+        (utils/add-menu-item man-menu "About" "A" nil #(actions/about-dlg app)))
       (.add menu-bar man-menu))))
-      
+
 ;; Startup
 
 (defonce current-app (atom nil))
@@ -356,6 +360,7 @@
     (proxy [Thread$UncaughtExceptionHandler] []
       (uncaughtException [thread exception]
         (println thread) (.printStackTrace exception))))
+  (System/setProperty "apple.laf.useScreenMenuBar" "true")
   (UIManager/setLookAndFeel (UIManager/getSystemLookAndFeelClassName))
   (let [app (create-app)]
     (reset! current-app app)
@@ -374,10 +379,9 @@
                                      (.performQuit response))))
         (.setAboutHandler mac-app (proxy [AboutHandler] []
                                     (handleAbout [_]
-                                      (actions/about-dlg))))))
-    )
-  )
+                                      (actions/about-dlg app))
+                                    ))))))
 
-(defn -main [& _]
+(defn -main []
   (startup))
 

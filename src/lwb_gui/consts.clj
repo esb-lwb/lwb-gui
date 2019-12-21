@@ -67,8 +67,7 @@
      "<html>Written in <strong>Clojure</strong> (clojure.org)<br />"
      "<html>based on the project <strong>Clooj</strong> (github.com/arthuredelstein/clooj)<br />"
      ""
-     "<html><strong>Libraries</strong> used:"
-     "RSyntaxTextArea (github.com/bobbylight/RSyntaxTextArea)"
-     "Seesaw (github.com/daveray/seesaw)"]))
+     "<html>Library used:"
+     "RSyntaxTextArea (github.com/bobbylight/RSyntaxTextArea)"]))
 
     

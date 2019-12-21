@@ -6,7 +6,6 @@
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :dependencies [[org.clojure/clojure "1.10.1"]
                  [rsyntaxtextarea/rsyntaxtextarea "3.0.5z"]
-                 [seesaw "1.5.0"]
                  [lwb "2.1.2"]]
   :main lwb-gui.main
   :profiles {:uberjar  {:aot :all}}

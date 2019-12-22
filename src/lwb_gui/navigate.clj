@@ -22,7 +22,7 @@
     (.setCaretPosition comp lstart)))
 
 (defn to-line-end [comp]
-  (let [lend (Utilities/getRowStart comp (.getCaretPosition comp))]
+  (let [lend (Utilities/getRowEnd comp (.getCaretPosition comp))]
     (.setCaretPosition comp lend)))
 
 (defn attach--keys [^JTextArea comp]

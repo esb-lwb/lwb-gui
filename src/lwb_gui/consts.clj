@@ -61,6 +61,7 @@
     \newline
     ["<html><strong>Logic Workbench GUI</strong>"
      (str "Rev " rev)
+     "uses Logic Workbench lwb Revision 2.1.3"
      "Project home: https:/github.com/esb-lwb/lwb-gui"
      ""
      "<html>Licensed under <strong>Eclipse Public License 1.0</strong><br />"

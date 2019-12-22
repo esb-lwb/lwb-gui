@@ -4,7 +4,17 @@ A simple GUI for the Logic Workbench lwb.
 
 ## Usage
 
-Just start the app, open a new session with the Logic Workbench
+You should have installed Java 9 or younger.<br/>
+Just start the app and then open a new session with the Logic Workbench.
+
+Mac OSX:<br/>
+<code>java -Duser.language=en -Xdock:name=lwb-gui -jar lwb-gui.jar</code>
+
+Linux:<br/>
+<code>java -Duser.language=en -jar lwb-gui.jar</code>
+
+Windows:<br/>
+<code>java -Duser.language=en -jar lwb-gui.jar</code>
 
 ## License
 

@@ -5,7 +5,9 @@
 
 (ns lwb-gui.search
   (:import (java.awt Color)
-           (java.util.regex Pattern Matcher))
+           (java.util.regex Pattern)
+           (javax.swing JCheckBox)
+           (org.fife.ui.rsyntaxtextarea TextEditorPane))
   (:require [lwb-gui.highlighting :as highlighting]
             [lwb-gui.utils :as utils]))
 
@@ -43,9 +45,9 @@
 (def current-pos (atom 0))
 
 (defn update-find-highlight [sta app back]
-  (let [dta (:edit-area app)
-        match-case (.isSelected (:search-match-case-checkbox app))
-        use-regex (.isSelected (:search-regex-checkbox app))
+  (let [^TextEditorPane dta (:edit-area app)
+        match-case (.isSelected ^JCheckBox (:search-match-case-checkbox app))
+        use-regex (.isSelected ^JCheckBox (:search-regex-checkbox app))
         posns (find-all-in-string (utils/get-text-str dta)
                                   (utils/get-text-str sta)
                                   match-case

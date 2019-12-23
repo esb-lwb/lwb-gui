@@ -9,12 +9,11 @@
            (javax.swing JTextArea))
   (:require [lwb-gui.utils :as utils]))
 
-; TODO: Mimik verbessern
 (defn highlight
   ([^JTextArea text-comp start stop color]
-   (when (and (<= 0 start) (<= stop (.. text-comp getDocument getLength)))
-     (.. text-comp getHighlighter
-         (addHighlight start stop
+   (when (and (<= 0 start) (<= stop (.getLength (.getDocument text-comp))))
+     (let [hl (.getHighlighter text-comp)]
+         (.addHighlight hl start stop
                        (DefaultHighlighter$DefaultHighlightPainter. color)))))
   ([text-comp pos color] (highlight text-comp pos (inc pos) color)))
 

@@ -10,8 +10,7 @@
            (org.fife.ui.rsyntaxtextarea TextEditorPane))
   (:require
     [lwb-gui.brackets :as brackets]
-    [lwb-gui.repl.clj-repl :as clj-repl]
-    [lwb-gui.utils :as utils]))
+    [lwb-gui.repl.clj-repl :as clj-repl]))
 
 (defn send-to-repl
   "Sends command to REPL.
@@ -19,7 +18,7 @@
   [app cmd silent?]
   (let [cmd-ln (str cmd \newline)]
     (when-not silent?
-      (utils/append-text (app :repl-area) cmd-ln))
+      (.append (app :repl-area) cmd-ln))
     (when-let [repl-map @(app :repl-map)]
       (clj-repl/evaluate repl-map cmd))))
 
@@ -41,7 +40,7 @@
               text
               (brackets/get-current-sexpr ta))]
     (if (or (nil? txt) (not (parens-balanced? txt)))
-      (utils/append-text (app :repl-area) "Not a well-formed sexpression!\n") ;; error!
+      (.append (app :repl-area) "Not a well-formed sexpression!\n") ;; error!
       (send-to-repl app txt false))))
 
 (defn send-top-sexpr-to-repl
@@ -50,14 +49,14 @@
   (let [ta (app :edit-area)
         txt (brackets/get-top-sexpr ta)]
     (if (nil? txt)
-      (utils/append-text (app :repl-area) "Not a well-formed sexpression!\n") ;; error!
+      (.append (app :repl-area) "Not a well-formed sexpression!\n") ;; error!
       (send-to-repl app txt false))))
 
 (defn send-doc-to-repl
   "Sends the whole content of the edit area to the REPL."
   [app]
   (let [text (.getText ^TextEditorPane (app :edit-area))]
-    (utils/append-text (app :repl-area) "Evaluating file...\n")
+    (.append (app :repl-area) "Evaluating file...\n")
     (send-to-repl app text true)))
 
 (defn make-repl-writer
@@ -67,11 +66,11 @@
     (proxy [Writer] []
       (write
         ([char-array _ _]
-         (utils/append-text repl-area (apply str char-array)))
+         (.append repl-area (apply str char-array)))
         ([t]
          (if (= Integer (type t))
-           (utils/append-text repl-area (str (char t)))
-           (utils/append-text repl-area (apply str t)))))
+           (.append repl-area (str (char t)))
+           (.append repl-area (apply str t)))))
       (flush [])
       (close [] nil))
     (PrintWriter. true)))
@@ -79,14 +78,15 @@
 (defn start-repl
   "Starts REPL."
   [app]
-  (utils/append-text (app :repl-area) (str "--- This is the Clojure REPL ---\n"))
-  (let [repl-map (clj-repl/launch-repl (app :repl-writer))]
-    (reset! (:repl-map app) repl-map)))
+  (let [repl-area (:repl-area app)]
+    (.append repl-area (str "--- This is the Clojure REPL ---\n"))
+    (let [repl-map (clj-repl/launch-repl (make-repl-writer repl-area))]
+      (reset! (:repl-map app) repl-map))))
 
 (defn stop-repl
   "Stops REPL."
   [app]
-  (utils/append-text (app :repl-area) "\n--- Bye, shutdown of Clojure REPL  ---\n")
+  (.append (:repl-area app) "\n--- Bye, shutdown of Clojure REPL  ---\n")
   (when-let [repl-map @(:repl-map app)] (clj-repl/close repl-map)))
 
 (defn restart-repl

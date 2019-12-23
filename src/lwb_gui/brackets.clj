@@ -29,15 +29,15 @@
         \) p \] p \} p
         s))))
 
-(defn find-enclosing-brackets [text pos]
+(defn find-enclosing-brackets [^String text pos]
   (let [process #(process-bracket-stack %1 %2 nil)
         reckon-dist (fn [stacks]
                       (let [scores (map count stacks)]
                         (utils/count-while #(<= (first scores) %) scores)))
-        before (.substring text 0 (Math/min (.length text) pos))
+        before (.substring text 0 (Math/min ^int (.length text) ^int pos))
         stacks-before (reverse (reductions process nil before))
         left (- pos (reckon-dist stacks-before))
-        after (.substring text (Math/min (.length text) pos))
+        after (.substring text (Math/min ^int (.length text) ^int pos))
         stacks-after (reductions process (first stacks-before) after)
         right (+ -1 pos (reckon-dist stacks-after))]
     [left right]))

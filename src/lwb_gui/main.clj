@@ -5,8 +5,8 @@
 
 (ns lwb-gui.main
   (:import (javax.swing BorderFactory JFrame JLabel JMenuBar JPanel JTextField SpringLayout JCheckBox JButton
-                        UIManager JMenu JTextArea AbstractAction JWindow JSplitPane JComponent JScrollPane ImageIcon)
-           (java.awt.event MouseAdapter WindowAdapter ActionListener MouseEvent)
+                        UIManager JMenu JTextArea AbstractAction JWindow JSplitPane JComponent JScrollPane ImageIcon JOptionPane)
+           (java.awt.event MouseAdapter WindowAdapter ActionListener MouseEvent KeyEvent)
            (java.awt Color Font)
            (org.fife.ui.rsyntaxtextarea SyntaxConstants TextEditorPane)
            (org.fife.ui.rtextarea RTextScrollPane)
@@ -141,9 +141,9 @@
   "Move caret to choosen line"
   [textarea]
   (let [current-line (fn [] (inc (.getLineOfOffset textarea (.getCaretPosition textarea))))
-        line-str (utils/ask-value "Line number:" "Go to Line")
+        line-str (JOptionPane/showInputDialog nil "Line number:" "Go to Line" JOptionPane/QUESTION_MESSAGE)
         line-num (Integer.
-                   (if (or (nil? line-str) (nil? (re-find #"\d+" line-str)))
+                   ^int (if (or (nil? line-str) (nil? (re-find #"\d+" line-str)))
                      (current-line)
                      (re-find #"\d+" line-str)))]
     (utils/scroll-to-line textarea line-num)
@@ -154,12 +154,6 @@
                             ["cmd1 PLUS" #(grow-font app)]
                             ["cmd1 MINUS" #(shrink-font app)]
                             ["cmd1 K" #(.setText (app :repl-area) "")]))
-
-(defn on-window-activation [win fun]
-  (.addWindowListener win
-                      (proxy [WindowAdapter] []
-                        (windowActivated [_]
-                          (fun)))))
 
 (defn make-edit-area []
   (doto (TextEditorPane.)
@@ -204,7 +198,6 @@
         edit-area (make-edit-area)
         repl-area (JTextArea.)
         ^JScrollPane repl-pane (repl-output/tailing-scroll-pane repl-area)
-        repl-writer (repl/make-repl-writer repl-area)
         search-text-area (JTextField.)
         search-match-case-checkbox (JCheckBox. "Match case")
         search-regex-checkbox (JCheckBox. "Regex")
@@ -228,7 +221,6 @@
                      search-regex-checkbox
                      search-close-button
                      pos-label
-                     repl-writer
                      split-pane
                      ))
         doc-scroll-pane (RTextScrollPane. ^TextEditorPane edit-area)
@@ -296,12 +288,14 @@
     (.setJMenuBar (:frame app) menu-bar)
     ;; Session
     (let [new-menu (doto (JMenu. "New")
+                     (.setMnemonic KeyEvent/VK_N)
                      (utils/add-menu-item "Propositional Logic" "" nil #(actions/new-session app consts/new-prop))
                      (utils/add-menu-item "Predicate Logic" "" nil #(actions/new-session app consts/new-pred))
                      (utils/add-menu-item "Linear Temporal Logic" "" nil #(actions/new-session app consts/new-ltl))
                      (utils/add-menu-item "Natural Deduction" "" nil #(actions/new-session app consts/new-nd))
                      (utils/add-menu-item "Combinatory Logic" "" nil #(actions/new-session app consts/new-cl)))
           session-menu (doto (JMenu. "Session")
+                         (.setMnemonic KeyEvent/VK_S)
                          (.add new-menu)
                          (utils/add-menu-item "Open" "O" "cmd1 O" #(actions/open-file app))
                          (.add ^RecentFilesMenu (:recent-menu app))
@@ -315,18 +309,20 @@
       (.add menu-bar session-menu))
     ;; Edit
     (let [edit-menu (doto (JMenu. "Edit")
+                      (.setMnemonic KeyEvent/VK_E)
                       (utils/add-menu-item "Comment" "C" "cmd1 SEMICOLON" #(actions/toggle-comment (:edit-area app)))
                       (utils/add-menu-item "Fix indentation" "F" "cmd1 I" #(actions/fix-indent-selected-lines (:edit-area app)))
                       (utils/add-menu-item "Indent lines" "I" "cmd1 shift RIGHT" #(actions/indent (:edit-area app)))
                       (utils/add-menu-item "Unindent lines" "D" "cmd1 shift LEFT" #(actions/unindent (:edit-area app)))
                       (utils/add-menu-item "Go to line..." "G" "cmd1 L" #(move-caret-to-line (:edit-area app)))
-                      (.addSeparator)
+                      (utils/add-menu-item :sep)
                       (utils/add-menu-item "Find" "F" "cmd1 F" #(search/start-find app))
                       (utils/add-menu-item "Find next" "N" "cmd1 G" #(search/highlight-step app false))
                       (utils/add-menu-item "Find prev" "P" "cmd1 shift G" #(search/highlight-step app true)))]
       (.add menu-bar edit-menu))
     ;; REPL
     (let [repl-menu (doto (JMenu. "REPL")
+                      (.setMnemonic KeyEvent/VK_R)
                       (utils/add-menu-item "Evaluate current sexpression" "C" "cmd2 shift C" #(repl/send-selected-to-repl app))
                       (utils/add-menu-item "Evaluate top sexpression" "T" "cmd2 shift T" #(repl/send-top-sexpr-to-repl app))
                       (utils/add-menu-item "Evaluate entire file" "F" "cmd2 shift F" #(repl/send-doc-to-repl app))
@@ -335,12 +331,14 @@
       (.add menu-bar repl-menu))
     ;; Options
     (let [options-menu (doto (JMenu. "Options")
+                         (.setMnemonic KeyEvent/VK_O)
                          (utils/add-menu-item "Increase font size" nil "cmd1 PLUS" #(grow-font app))
                          (utils/add-menu-item "Decrease font size" nil "cmd1 MINUS" #(shrink-font app))
                          (utils/add-menu-item "Settings" nil nil #(settings/show-settings-window app apply-settings)))]
       (.add menu-bar options-menu))
     ;; Manual
     (let [man-menu (doto (JMenu. "Manual")
+                     (.setMnemonic KeyEvent/VK_M)
                      (utils/add-menu-item "Propositional Logic" "" nil #(actions/man "prop"))
                      (utils/add-menu-item "Predicate Logic" "" nil #(actions/man "pred"))
                      (utils/add-menu-item "Linear Temporal Logic" "" nil #(actions/man "ltl"))

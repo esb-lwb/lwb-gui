@@ -8,12 +8,11 @@
 (ns lwb-gui.settings
   (:import (javax.swing JFrame JTabbedPane JLabel
                         JPanel JComboBox Box
-                        JTextField JTextArea
+                        JTextArea
                         BoxLayout SpringLayout
-                        JButton JCheckBox)
-           (java.awt Font GraphicsEnvironment Dimension)
+                        JCheckBox JButton)
+           (java.awt Font GraphicsEnvironment Dimension FontMetrics Graphics)
            (java.awt.image BufferedImage)
-           (javax.swing.event DocumentListener)
            (java.awt.event ActionListener ItemListener ItemEvent))
   (:require [lwb-gui.utils :as utils]))
 
@@ -25,22 +24,10 @@
     (.addActionListener
       (reify ActionListener
         (actionPerformed [_ e]
-          (change-fun (.. e getSource getSelectedItem)))))))
-
-(defn text-field [default-value change-fun]
-  (let [tf (JTextField. (str default-value))]
-    (.addDocumentListener
-      (.getDocument tf)
-      (reify DocumentListener
-        (insertUpdate [_ e]
-          (change-fun (.getText tf)))
-        (removeUpdate [_ e]
-          (change-fun (.getText tf)))
-        (changedUpdate [_ e])))
-    tf))
+          (change-fun (.getSelectedItem (.getSource e))))))))
 
 (defn check-box [text checked? change-fun]
-  (doto (JCheckBox. text checked?)
+  (doto (JCheckBox. ^String text ^boolean checked?)
     (.addItemListener
       (reify ItemListener
         (itemStateChanged [_ e]
@@ -50,11 +37,11 @@
               ItemEvent/SELECTED)))))))
 
 (defn font-panel []
-  (let [graphics-object (memoize (fn [] (.createGraphics
-                                          (BufferedImage. 1 1 BufferedImage/TYPE_INT_ARGB))))
+  (let [^Graphics graphics-object (memoize (fn [] (.createGraphics
+                                                    (BufferedImage. 1 1 BufferedImage/TYPE_INT_ARGB))))
         monospaced? (fn [font] (let [g (graphics-object)
-                                     m (.getFontMetrics g font)]
-                                 (apply == (map #(.charWidth m %) [\m \n \. \M \-]))))
+                                     ^FontMetrics m (.getFontMetrics ^Graphics g ^Font font)]
+                                 (apply == (map #(.charWidth m ^char %) [\m \n \. \M \-]))))
         get-all-font-names (fn [] (.. GraphicsEnvironment
                                       getLocalGraphicsEnvironment
                                       getAvailableFontFamilyNames))
@@ -66,35 +53,35 @@
         example-text-area (doto (JTextArea. "abcdefghijklmnopqrstuvwxyz 0123456789 (){}[]\nABCDEFGHIJKLMNOPQRSTUVWXYZ +-*/= .,;:!? #&$%@|^")
                             (.setFont (Font. (:font-name @settings) Font/PLAIN (:font-size @settings))))
         example-pane (doto (JPanel. (SpringLayout.)) (.add example-text-area))
-        font-box (combo-box
-                   (get-necessary-fonts)
-                   (:font-name @settings)
-                   #(do
-                      (swap! settings assoc :font-name %)
-                      (.setFont
-                        example-text-area
-                        (Font. % Font/PLAIN (:font-size @settings)))))
-        size-box (combo-box
-                   (range 5 49)
-                   (:font-size @settings)
-                   #(do
-                      (swap! settings assoc :font-size %)
-                      (.setFont
-                        example-text-area
-                        (Font. (:font-name @settings) Font/PLAIN %))))
-        monospaced-check-box (check-box
-                               "Show only monospaced fonts"
-                               (:show-only-monospaced-fonts @settings)
-                               #(do
-                                  (swap! settings
-                                         assoc :show-only-monospaced-fonts %)
-                                  (doto font-box
-                                    (.setModel
-                                      (.getModel
-                                        (JComboBox.
-                                          (into-array
-                                            (get-necessary-fonts)))))
-                                    (.setSelectedItem (:font-name @settings)))))
+        ^JComboBox font-box (combo-box
+                              (get-necessary-fonts)
+                              (:font-name @settings)
+                              #(do
+                                 (swap! settings assoc :font-name %)
+                                 (.setFont
+                                   example-text-area
+                                   (Font. % Font/PLAIN (:font-size @settings)))))
+        ^JComboBox size-box (combo-box
+                              (range 5 49)
+                              (:font-size @settings)
+                              #(do
+                                 (swap! settings assoc :font-size %)
+                                 (.setFont
+                                   example-text-area
+                                   (Font. (:font-name @settings) Font/PLAIN %))))
+        ^JCheckBox monospaced-check-box (check-box
+                                          "Show only monospaced fonts"
+                                          (:show-only-monospaced-fonts @settings)
+                                          #(do
+                                             (swap! settings
+                                                    assoc :show-only-monospaced-fonts %)
+                                             (doto font-box
+                                               (.setModel
+                                                 (.getModel
+                                                   (JComboBox.
+                                                     (into-array
+                                                       (get-necessary-fonts)))))
+                                               (.setSelectedItem (:font-name @settings)))))
         controls-pane (JPanel.)
         font-pane (JPanel.)]
     (utils/constrain-to-parent example-text-area :n 20 :w 15 :s -15 :e -15)
@@ -121,14 +108,14 @@
   (let [options-pane (JPanel.)]
     (doto options-pane
       (.setLayout (BoxLayout. options-pane BoxLayout/Y_AXIS))
-      (.add (check-box
-              "Wrap lines in source editor"
-              (:line-wrap-doc @settings)
-              #(swap! settings assoc :line-wrap-doc %)))
-      (.add (check-box
-              "Wrap lines in repl output"
-              (:line-wrap-repl-out @settings)
-              #(swap! settings assoc :line-wrap-repl-out %))))))
+      (.add ^JCheckBox (check-box
+                         "Wrap lines in source editor"
+                         (:line-wrap-doc @settings)
+                         #(swap! settings assoc :line-wrap-doc %)))
+      (.add ^JCheckBox (check-box
+                         "Wrap lines in repl output"
+                         (:line-wrap-repl-out @settings)
+                         #(swap! settings assoc :line-wrap-repl-out %))))))
 
 (defmacro tabs [& elements]
   `(doto (JTabbedPane.)
@@ -143,11 +130,11 @@
 
     (doto button-pane
       (.setLayout (BoxLayout. button-pane BoxLayout/X_AXIS))
-      (.add (utils/create-button "OK" #(do
-                                         (apply-fn app @settings)
-                                         (.dispose settings-frame))))
-      (.add (utils/create-button "Apply" #(apply-fn app @settings)))
-      (.add (utils/create-button "Cancel" #(.dispose settings-frame))))
+      (.add ^JButton (utils/create-button "OK" #(do
+                                                  (apply-fn app @settings)
+                                                  (.dispose settings-frame))))
+      (.add ^JButton (utils/create-button "Apply" #(apply-fn app @settings)))
+      (.add ^JButton (utils/create-button "Cancel" #(.dispose settings-frame))))
 
     (doto settings-frame
       (.setDefaultCloseOperation JFrame/DISPOSE_ON_CLOSE)

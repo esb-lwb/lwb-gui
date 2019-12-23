@@ -7,74 +7,42 @@
   (:require [clojure.string :as string :only (join split)]
             [lwb-gui.prefs :as prefs])
   (:import (java.util UUID)
-           (java.awt FileDialog Point Window)
-           (java.awt.event ActionListener MouseAdapter)
-           (java.util.prefs Preferences)
-           (java.security MessageDigest)
-           (java.io ByteArrayInputStream ByteArrayOutputStream
-                    File FilenameFilter BufferedReader
-                    InputStreamReader
-                    ObjectInputStream ObjectOutputStream
-                    OutputStream Writer PrintStream)
-           (javax.swing AbstractAction JButton JFileChooser JMenu JMenuBar JMenuItem BorderFactory
-                        JOptionPane JSplitPane KeyStroke SpringLayout SwingUtilities)
-           (javax.swing.event CaretListener DocumentListener UndoableEditListener)
-           (javax.swing.undo UndoManager)
+           (java.awt Point Window Component Container)
+           (java.awt.event ActionListener ComponentAdapter)
+           (javax.swing AbstractAction JButton JMenuItem BorderFactory
+                        JSplitPane KeyStroke SpringLayout SwingUtilities JTextArea JViewport JMenu)
+           (javax.swing.event CaretListener DocumentListener)
+           (java.beans PropertyChangeListener)
            (javax.swing.text JTextComponent)))
 
 ;; general
-
-(defmacro do-when [f & args]
-  (let [args_ args]
-    `(when (and ~@args_)
-       (~f ~@args_))))
-
 (defmacro when-lets [bindings & body]
   (assert (vector? bindings))
   (let [n (count bindings)]
     (assert (zero? (mod n 2)))
     (assert (<= 2 n))
-  (if (= 2 n)
-    `(when-let ~bindings ~@body)
-    (let [[a b] (map vec (split-at 2 bindings))]     
-      `(when-let ~a (when-lets ~b ~@body))))))
+    (if (= 2 n)
+      `(when-let ~bindings ~@body)
+      (let [[a b] (map vec (split-at 2 bindings))]
+        `(when-let ~a (when-lets ~b ~@body))))))
 
 (defn count-while [pred coll]
   (count (take-while pred coll)))
 
-(defn remove-nth [s n]
-  (lazy-cat (take n s) (drop (inc n) s)))
-
 (defmacro awt-event [& body]
   `(SwingUtilities/invokeLater
      (fn [] (try ~@body
-                 (catch Throwable t# 
-                        (.printStackTrace t#))))))
+                 (catch Throwable t#
+                   (.printStackTrace t#))))))
 
 (defmacro gen-map [& args]
   (let [kw (map keyword args)]
     (zipmap kw args)))
 
-(defn class-for-name
-  "Returns true if a class represented by class-name
-   can be found by the class loader."
-  [class-name]
-  (try (Class/forName class-name)
-       (catch Throwable _ nil)))
-
-(defn static-method [class-name method-name & arg-types]
-  (let [method
-        (some-> class-name
-                class-for-name
-                (.getMethod method-name
-                            (into-array Class arg-types)))]
-          (fn [& args]
-            (.invoke method nil (object-array args)))))
-
 ;; identify OS
 
 (defn get-os []
-  (.. System (getProperty "os.name") toLowerCase))
+  (.toLowerCase (System/getProperty "os.name")))
 
 (def is-win
   (memoize #(not (neg? (.indexOf (get-os) "win")))))
@@ -92,10 +60,10 @@
   (let [edges {:n SpringLayout/NORTH
                :w SpringLayout/WEST
                :s SpringLayout/SOUTH
-               :e SpringLayout/EAST}]
-    (.. comp1 getParent getLayout
-        (putConstraint (edges edge1) comp1 
-                       dist (edges edge2) comp2))))
+               :e SpringLayout/EAST}
+        ^SpringLayout layout (.getLayout (.getParent comp1))]
+    (.putConstraint layout ^String (edge1 edges) ^JTextComponent comp1
+                    ^int dist ^String (edge2 edges) ^JTextComponent comp2)))
 
 (defn put-constraints [comp & args]
   (let [args (partition 3 args)
@@ -110,18 +78,7 @@
 
 ;; text components
 
-(defn get-line-text [text-pane line]
-  (let [start (.getLineStartOffset text-pane line)
-        length (- (.getLineEndOffset text-pane line) start)]
-    (.. text-pane getDocument (getText start length))))
-
-(defn append-text
-  ([text-pane text scroll-to-end?]
-    (append-text text-pane text))
-  ([text-pane text]
-    (.append text-pane text)))
-
-(defn get-coords [text-comp offset]
+(defn get-coords [^JTextArea text-comp offset]
   (let [row (.getLineOfOffset text-comp offset)
         col (- offset (.getLineStartOffset text-comp row))]
     {:row row :col col}))
@@ -134,16 +91,11 @@
   (.addDocumentListener
     (.getDocument text-comp)
     (reify DocumentListener
-      (insertUpdate [this evt] (f text-comp))
-      (removeUpdate [this evt] (f text-comp))
-      (changedUpdate [this evt]))))
+      (insertUpdate [_ _] (f text-comp))
+      (removeUpdate [_ _] (f text-comp))
+      (changedUpdate [_ _]))))
 
-(defn remove-text-change-listeners [text-comp]
-  (let [d (.getDocument text-comp)]
-    (doseq [l (.getDocumentListeners d)]
-      (.removeDocumentListener d l))))
-                               
-(defn get-text-str 
+(defn get-text-str
   "Text from JTextComponent."
   [text-comp]
   (let [doc (.getDocument text-comp)]
@@ -151,33 +103,26 @@
 
 (defn add-caret-listener [text-comp f]
   (.addCaretListener text-comp
-                     (reify CaretListener (caretUpdate [this evt]
-                                                       (f text-comp)))))
+                     (reify CaretListener (caretUpdate [_ _]
+                                            (f text-comp)))))
 
 (defn set-selection [text-comp start end]
   (doto text-comp (.setSelectionStart start) (.setSelectionEnd end)))
 
-(defn scroll-to-pos [text-area offset]
+(defn scroll-to-pos [^JTextArea text-area offset]
   (let [r (.modelToView text-area offset)
-        v (.getParent text-area)
-        l (.. v getViewSize height)
-        h (.. v getViewRect height)]
+        ^JViewport v (.getParent text-area)
+        l (.height (.getViewSize v))
+        h (.height (.getViewRect v))]
     (when r
       (.setViewPosition v
                         (Point. 0 (min (- l h) (max 0 (- (.y r) (/ h 2)))))))))
 
 (defn scroll-to-line [text-comp line]
-    (let [text (.getText text-comp)
-          pos (inc (.length (string/join "\n" (take (dec line) (string/split text #"\n")))))]
-      (.setCaretPosition text-comp pos)
-      (scroll-to-pos text-comp pos)))
-
-(defn scroll-to-caret [text-comp]
-  (scroll-to-pos text-comp (.getCaretPosition text-comp)))
-
-(defn focus-in-text-component [text-comp]
-  (.requestFocusInWindow text-comp)
-  (scroll-to-caret text-comp))
+  (let [text (.getText text-comp)
+        pos (inc (.length (string/join "\n" (take (dec line) (string/split text #"\n")))))]
+    (.setCaretPosition text-comp pos)
+    (scroll-to-pos text-comp pos)))
 
 (defn get-selected-lines [text-comp]
   (let [row1 (.getLineOfOffset text-comp (.getSelectionStart text-comp))
@@ -202,45 +147,24 @@
         (when (= (.getText (.getDocument text-comp) start len) txt)
           (.remove document start len))))))
 
-#_(defn comment-out [text-comp]
-  (insert-in-selected-row-headers text-comp ";"))
-
-#_(defn uncomment-out [text-comp]
-  (remove-from-selected-row-headers text-comp ";"))
-
-#_(defn toggle-comment [^JTextComponent text-comp]
-  (if (= (.getText (.getDocument text-comp) 
-                   (first (get-selected-line-starts text-comp)) 1)
-         ";")
-    (uncomment-out text-comp)
-    (comment-out text-comp)))
-    
-#_(defn indent [text-comp]
-  (when (.isFocusOwner text-comp)
-    (insert-in-selected-row-headers text-comp "  ")))
-
-#_(defn unindent [text-comp]
-  (when (.isFocusOwner text-comp)
-    (remove-from-selected-row-headers text-comp "  ")))
-
 ;; other gui
 
 (defn make-split-pane [comp1 comp2 horizontal divider-size resize-weight]
-  (doto (JSplitPane. (if horizontal JSplitPane/HORIZONTAL_SPLIT 
+  (doto (JSplitPane. (if horizontal JSplitPane/HORIZONTAL_SPLIT
                                     JSplitPane/VERTICAL_SPLIT)
                      true comp1 comp2)
-        (.setResizeWeight resize-weight)
-        (.setOneTouchExpandable false)
-        (.setBorder (BorderFactory/createEmptyBorder))
-        (.setDividerSize divider-size)))
+    (.setResizeWeight resize-weight)
+    (.setOneTouchExpandable false)
+    (.setBorder (BorderFactory/createEmptyBorder))
+    (.setDividerSize divider-size)))
 
 ;; keys
 
-(defn get-keystroke [key-shortcut]
+(defn get-keystroke [^String key-shortcut]
   (KeyStroke/getKeyStroke
     (-> key-shortcut
-      (.replace "cmd1" (if (is-mac) "meta" "ctrl"))
-      (.replace "cmd2" (if (is-mac) "ctrl" "alt")))))
+        (.replace "cmd1" (if (is-mac) "meta" "ctrl"))
+        (.replace "cmd2" (if (is-mac) "ctrl" "alt")))))
 
 ;; actions
 
@@ -256,19 +180,16 @@
         parent-action (if-let [tag (.get im input-event)]
                         (.get am tag))
         child-action
-          (proxy [AbstractAction] []
-            (actionPerformed [e]
-              (if (pred)
-                (action-fn)
-                (when parent-action
-                  (.actionPerformed parent-action e)))))
-        uuid (.. UUID randomUUID toString)]
+        (proxy [AbstractAction] []
+          (actionPerformed [e]
+            (if (pred)
+              (action-fn)
+              (when parent-action
+                (.actionPerformed parent-action e)))))
+        uuid (.toString (UUID/randomUUID))]
     (.put im input-event uuid)
     (.put am uuid child-action)))
 
-
-(defn attach-child-action-keys [comp & items]
-  (doall (map #(apply attach-child-action-key comp %) items)))
 
 (defn attach-action-key
   "Maps an input-key on a swing component to an action-fn."
@@ -280,10 +201,10 @@
   "Maps input keys to action-fns."
   [comp & items]
   (doall (map #(apply attach-action-key comp %) items)))
-  
+
 ;; buttons
- 
-(defn create-button [text fn]
+
+(defn create-button [^String text fn]
   (doto (JButton. text)
     (.addActionListener
       (reify ActionListener
@@ -292,78 +213,44 @@
 ;; menus
 
 (defn add-menu-item
-  ([menu item-name key-mnemonic key-accelerator response-fn]
-    (let [menu-item (JMenuItem. item-name)]  
-      (when key-accelerator
-        (.setAccelerator menu-item (get-keystroke key-accelerator)))
-      (when (and (not (is-mac)) key-mnemonic)
-        (.setMnemonic menu-item (.getKeyCode (get-keystroke key-mnemonic))))
-      (.addActionListener menu-item
-                          (reify ActionListener
-                            (actionPerformed [this action-event]
-                                             (response-fn))))
-      (.add menu menu-item)))
-  ([menu item]
-    (condp = item
-      :sep (.addSeparator menu))))
-  
-(defn add-menu
-  "Each item-tuple is a vector containing a
-  menu item's text, mnemonic key, accelerator key, and the function
-  it executes."
-  [menu-bar title key-mnemonic & item-tuples]
-  (let [menu (JMenu. title)]
-    (when (and (not (is-mac)) key-mnemonic)
-      (.setMnemonic menu (.getKeyCode (get-keystroke key-mnemonic))))
-    (doall (map #(apply add-menu-item menu %) item-tuples))
-    (.add menu-bar menu)
-    menu))
-
-;; mouse
-
-(defn on-click [comp num-clicks fun]
-  (.addMouseListener comp
-    (proxy [MouseAdapter] []
-      (mouseClicked [event]
-        (when (== num-clicks (.getClickCount event))
-          (.consume event)
-          (fun))))))
-
-;; undoability
-
-(defn make-undoable [text-area]
-  (let [undoMgr (UndoManager.)]
-    (.setLimit undoMgr 1000)
-    (.. text-area getDocument (addUndoableEditListener
-        (reify UndoableEditListener
-          (undoableEditHappened [this evt] (.addEdit undoMgr (.getEdit evt))))))
-    (attach-action-keys text-area
-      ["cmd1 Z" #(if (.canUndo undoMgr) (.undo undoMgr))]
-      ["cmd1 shift Z" #(if (.canRedo undoMgr) (.redo undoMgr))])))
+  ([^JMenu menu ^String item-name key-mnemonic key-accelerator response-fn]
+   (let [menu-item (JMenuItem. item-name)]
+     (when key-accelerator
+       (.setAccelerator menu-item (get-keystroke key-accelerator)))
+     (when (and (not (is-mac)) key-mnemonic)
+       (.setMnemonic menu-item (.getKeyCode (get-keystroke key-mnemonic))))
+     (.addActionListener menu-item
+                         (reify ActionListener
+                           (actionPerformed [_ _]
+                             (response-fn))))
+     (.add menu menu-item)))
+  ([^JMenu menu item]
+   (condp = item
+     :sep (.addSeparator menu))))
 
 ;; saving and restoring window shape in preferences -----------------------------------
 (defn get-shape [components]
   (for [comp components]
     (condp instance? comp
       Window
-        [:window {:x (.getX comp) :y (.getY comp)
-                  :w (.getWidth comp) :h (.getHeight comp)}]
+      [:window {:x (.getX comp) :y (.getY comp)
+                :w (.getWidth comp) :h (.getHeight comp)}]
       JSplitPane
-        [:split-pane {:location (.getDividerLocation comp)}]
+      [:split-pane {:location (.getDividerLocation comp)}]
       nil)))
 
 (defn watch-shape [components fun]
   (doseq [comp components]
     (condp instance? comp
       Window
-        (.addComponentListener comp
-          (proxy [java.awt.event.ComponentAdapter] []
-            (componentMoved [_] (fun))
-            (componentResized [_] (fun))))
+      (.addComponentListener comp
+                             (proxy [ComponentAdapter] []
+                               (componentMoved [_] (fun))
+                               (componentResized [_] (fun))))
       JSplitPane
-        (.addPropertyChangeListener comp JSplitPane/DIVIDER_LOCATION_PROPERTY
-          (proxy [java.beans.PropertyChangeListener] []
-            (propertyChange [_] (fun))))
+      (.addPropertyChangeListener comp JSplitPane/DIVIDER_LOCATION_PROPERTY
+                                  (proxy [PropertyChangeListener] []
+                                    (propertyChange [_] (fun))))
       nil)))
 
 (defn set-shape [components shape-data]
@@ -379,21 +266,21 @@
             :split-pane
             (.setDividerLocation comp (:location (second shape)))
             nil))
-        (catch Exception e nil)))
+        (catch Exception _ nil)))
     (when (next comps)
       (recur (next comps) (next shapes)))))
 
 (defn restore-shape [name components]
   (try
     (set-shape components (prefs/pget name))
-    (catch Exception e)))
+    (catch Exception _)))
 
-(defn widget-seq [^java.awt.Component comp]
-  (tree-seq #(instance? java.awt.Container %)
+(defn widget-seq [^Component comp]
+  (tree-seq #(instance? Container %)
             #(seq (.getComponents %))
             comp))
 
-(defn persist-window-shape [name ^java.awt.Window window]
+(defn persist-window-shape [name ^Window window]
   (let [components (widget-seq window)
         shape-persister (agent nil)]
     (restore-shape name components)
@@ -404,75 +291,4 @@
                                 (when (not= old-shape shape)
                                   (prefs/pput name shape))
                                 shape))))))
-
-    
-(defn confirmed? [question title]
-  (= JOptionPane/YES_OPTION
-     (JOptionPane/showConfirmDialog
-       nil question title  JOptionPane/YES_NO_OPTION)))
-
-(defn ask-value [question title]
-  (JOptionPane/showInputDialog nil question title JOptionPane/QUESTION_MESSAGE))
-
-
-(defn sha1-str [obj]
-   (let [bytes (.getBytes (with-out-str (pr obj)))] 
-     (String. (.digest (MessageDigest/getInstance "MD") bytes))))
-
-;; streams, writers and readers
- 
-(defn printstream-to-writer [writer]
-  (->
-    (proxy [OutputStream] []
-      (write
-        ([^bytes bs offset length]
-          (.write writer
-                  (.toCharArray (String. ^bytes bs "utf-8"))
-                  offset length))
-        ([b]
-          (.write writer b)))
-      (flush [] (.flush writer))
-      (close [] (.close writer)))
-    (PrintStream. true)))
-
-(defn process-reader
-  "Create a buffered reader from the output of a process."
-  [process]
-  (-> process
-      .getInputStream
-      InputStreamReader.
-      BufferedReader.))
-
-(defn copy-input-stream-to-writer
-  "Continuously copies all content from a java InputStream
-   to a java Writer. Blocks until InputStream closes."
-  [input-stream writer] 
-  (let [reader (InputStreamReader. input-stream)]
-    (loop []
-      (let [c (.read reader)]
-        (when (not= c -1)
-          (.write writer c)
-          (recur))))))
-
-;; OS-specific utils
-
-#_(defn enable-mac-fullscreen
-  "Shows the Mac full-screen double arrow, as introduced in
-   OS X Lion, if possible."
-  [window]
-    (when (is-mac)
-      (let [enable (static-method
-                     "com.apple.eawt.FullScreenUtilities"
-                     "setWindowCanFullScreen"
-                     java.awt.Window
-                     Boolean/TYPE)]
-        (enable window true))))
-
-
-
-
-
-
-
-
 

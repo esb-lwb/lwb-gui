@@ -6,7 +6,8 @@
 (ns lwb-gui.indent
   (:require [lwb-gui.utils :as utils]
             [lwb-gui.brackets :as brackets]
-            [clojure.string :as string]))
+            [clojure.string :as string])
+  (:import (javax.swing JTextArea)))
 
 (def special-tokens 
   ["def" "defn" "defmacro" "let" "for" "loop" "doseq" "if" "when"
@@ -37,19 +38,20 @@
   (let [bracket-pos (first (brackets/find-enclosing-brackets
                              (utils/get-text-str text-comp) offset))]
     (when (<= 0 bracket-pos)
-      (let [bracket (.. text-comp getText (charAt bracket-pos))
+      (let [text (.getText text-comp)
+            bracket (.charAt text bracket-pos)
             col (:col (utils/get-coords text-comp bracket-pos))]
         (if (= bracket \;)
           (compute-indent-size text-comp bracket-pos)
           (+ col
              (condp = bracket
-               \( (left-paren-indent-size (.. text-comp getDocument (getText
+               \( (left-paren-indent-size (.getText (.getDocument text-comp)
                                                     bracket-pos
                                                     (- offset bracket-pos))))
                \\ 0  \[ 1  \{ 1  \" 1
-               1))))))) ;"
+               1)))))) 
 
-(defn fix-indent [text-comp line]
+(defn fix-indent [^JTextArea text-comp line]
   (let [start (.getLineStartOffset text-comp line)
         end (.getLineEndOffset text-comp line)
         document (.getDocument text-comp)

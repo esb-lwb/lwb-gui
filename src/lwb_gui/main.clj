@@ -7,11 +7,10 @@
   (:import (javax.swing BorderFactory JFrame JLabel JMenuBar JPanel JTextField SpringLayout JCheckBox JButton
                         UIManager JMenu JTextArea AbstractAction JWindow JSplitPane JComponent JScrollPane ImageIcon JOptionPane)
            (java.awt.event MouseAdapter WindowAdapter ActionListener MouseEvent KeyEvent)
-           (java.awt Color Font)
+           (java.awt Color Font Desktop)
            (org.fife.ui.rsyntaxtextarea SyntaxConstants TextEditorPane)
            (org.fife.ui.rtextarea RTextScrollPane)
            (org.fife.ui.utils RecentFilesMenu)
-           (com.apple.eawt Application)
            (java.awt.desktop AboutHandler QuitHandler QuitResponse))
   (:require [clojure.set]
             [lwb-gui.actions :as actions]
@@ -358,7 +357,8 @@
     (proxy [Thread$UncaughtExceptionHandler] []
       (uncaughtException [thread exception]
         (println thread) (.printStackTrace exception))))
-  (System/setProperty "apple.laf.useScreenMenuBar" "true")
+  (if utils/is-mac
+    (System/setProperty "apple.laf.useScreenMenuBar" "true") )
   (UIManager/setLookAndFeel (UIManager/getSystemLookAndFeelClassName))
   (let [app (create-app)]
     (reset! current-app app)
@@ -370,7 +370,7 @@
     (apply-settings app @(:settings app))
     ; special handlers for Mac OSX
     (if utils/is-mac
-      (let [mac-app (Application/getApplication)]
+      (let [mac-app #_(Application/getApplication) (Desktop/getDesktop)]
         (.setQuitHandler mac-app (proxy [QuitHandler] []
                                    (handleQuitRequestWith [_ ^QuitResponse response]
                                      (actions/exit app)

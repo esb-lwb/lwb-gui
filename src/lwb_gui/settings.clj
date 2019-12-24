@@ -139,7 +139,7 @@
     (doto settings-frame
       (.setDefaultCloseOperation JFrame/DISPOSE_ON_CLOSE)
       (.setLayout (BoxLayout. (.getContentPane settings-frame) BoxLayout/Y_AXIS))
-      (.setBounds (- x 250) (- y 250) 500 500)
+      (.setBounds (- x 250) (- y 250) 500 300)
 
       (.add (tabs
               ["Font" (font-panel)]

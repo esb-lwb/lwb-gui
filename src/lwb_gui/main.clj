@@ -5,11 +5,11 @@
 
 (ns lwb-gui.main
   (:import (javax.swing BorderFactory JFrame JLabel JMenuBar JPanel JTextField SpringLayout JCheckBox JButton
-                        UIManager JMenu JTextArea AbstractAction JWindow JSplitPane JComponent JScrollPane ImageIcon JOptionPane)
+                        UIManager JMenu JTextArea AbstractAction JWindow JSplitPane JComponent JScrollPane ImageIcon JOptionPane JMenuItem)
            (java.awt.event MouseAdapter WindowAdapter ActionListener MouseEvent KeyEvent)
            (java.awt Color Font Desktop)
-           (org.fife.ui.rsyntaxtextarea SyntaxConstants TextEditorPane)
-           (org.fife.ui.rtextarea RTextScrollPane)
+           (org.fife.ui.rsyntaxtextarea SyntaxConstants TextEditorPane TokenMakerFactory RSyntaxTextArea TokenMaker TokenMap)
+           (org.fife.ui.rtextarea RTextScrollPane RTextArea)
            (org.fife.ui.utils RecentFilesMenu)
            (java.awt.desktop AboutHandler QuitHandler QuitResponse))
   (:require [clojure.set]
@@ -298,7 +298,6 @@
                          (.add new-menu)
                          (utils/add-menu-item "Open" "O" "cmd1 O" #(actions/open-file app))
                          (.add ^RecentFilesMenu (:recent-menu app))
-                         ;(utils/add-menu-item "Open Recent..." "R" "cmd1 R" #(actions/open-recent-file app))
                          (utils/add-menu-item "Save" "S" "cmd1 S" #(actions/save-file app))
                          (utils/add-menu-item "Save As.." "A" "cmd1 shift S" #(actions/save-as-file app))
                          (utils/add-menu-item "Close" "C" "cmd1 C" #(actions/close-session app))
@@ -309,6 +308,13 @@
     ;; Edit
     (let [edit-menu (doto (JMenu. "Edit")
                       (.setMnemonic KeyEvent/VK_E)
+                      (.add (JMenuItem. (RTextArea/getAction RTextArea/UNDO_ACTION)))
+                      (.add (JMenuItem. (RTextArea/getAction RTextArea/REDO_ACTION)))
+                      (utils/add-menu-item :sep)
+                      (.add (JMenuItem. (RTextArea/getAction RTextArea/CUT_ACTION)))
+                      (.add (JMenuItem. (RTextArea/getAction RTextArea/COPY_ACTION)))
+                      (.add (JMenuItem. (RTextArea/getAction RTextArea/PASTE_ACTION)))
+                      (utils/add-menu-item :sep)
                       (utils/add-menu-item "Comment" "C" "cmd1 SEMICOLON" #(actions/toggle-comment (:edit-area app)))
                       (utils/add-menu-item "Fix indentation" "F" "cmd1 I" #(actions/fix-indent-selected-lines (:edit-area app)))
                       (utils/add-menu-item "Indent lines" "I" "cmd1 shift RIGHT" #(actions/indent (:edit-area app)))
@@ -357,7 +363,7 @@
     (proxy [Thread$UncaughtExceptionHandler] []
       (uncaughtException [thread exception]
         (println thread) (.printStackTrace exception))))
-  (if utils/is-mac
+  (if (utils/is-mac)
     (System/setProperty "apple.laf.useScreenMenuBar" "true") )
   (UIManager/setLookAndFeel (UIManager/getSystemLookAndFeelClassName))
   (let [app (create-app)]
@@ -369,8 +375,8 @@
     (repl/start-repl app)
     (apply-settings app @(:settings app))
     ; special handlers for Mac OSX
-    (if utils/is-mac
-      (let [mac-app #_(Application/getApplication) (Desktop/getDesktop)]
+    (if (utils/is-mac)
+      (let [mac-app (Desktop/getDesktop)]
         (.setQuitHandler mac-app (proxy [QuitHandler] []
                                    (handleQuitRequestWith [_ ^QuitResponse response]
                                      (actions/exit app)

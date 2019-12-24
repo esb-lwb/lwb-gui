@@ -4,7 +4,7 @@ A simple GUI for the Logic Workbench lwb.
 
 ## Usage
 
-You should have installed Java 9 or younger.<br/>
+You should have installed Java 9 or newer.<br/>
 Just start the app and then open a new session with the Logic Workbench.
 
 ### Mac OSX

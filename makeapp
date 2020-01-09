@@ -7,7 +7,7 @@
 # Javapackager creates an app, that doesn't use the QuitHandler and the AboutHandler
 # i.e. it can't be used
 
-# use instaed this:
+# use this instead:
 # java -Duser.language=en -Xdock:name=lwb-gui -jar lwb-gui.jar
 
 javapackager -deploy -name lwb-gui -appclass lwb_gui.main \

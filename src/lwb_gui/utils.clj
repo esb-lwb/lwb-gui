@@ -217,7 +217,7 @@
    (let [menu-item (JMenuItem. item-name)]
      (when key-accelerator
        (.setAccelerator menu-item (get-keystroke key-accelerator)))
-     (when (and (not (is-mac)) key-mnemonic)
+     (when (and (is-win) key-mnemonic)
        (.setMnemonic menu-item (.getKeyCode (get-keystroke key-mnemonic))))
      (.addActionListener menu-item
                          (reify ActionListener

@@ -90,8 +90,11 @@
   (when-let [repl-map @(:repl-map app)] (clj-repl/close repl-map)))
 
 (defn restart-repl
-  "Restarts REPL."
-  [app]
-  (stop-repl app)
-  (start-repl app))
-
+  "Restarts REPL. If clear? clears output."
+  ([app]
+   (restart-repl app false))
+  ([app clear?]
+   (stop-repl app)
+   (when clear?
+     (.setText (:repl-area app) ""))
+    (start-repl app)))

@@ -17,7 +17,8 @@
            (javax.swing.filechooser FileNameExtensionFilter)
            (java.io File)
            (org.fife.ui.utils RecentFilesMenu)
-           (javax.swing.text JTextComponent)))
+           (javax.swing.text JTextComponent)
+           (com.sun.jmx.defaults JmxProperties)))
 
 ;; Sessions ---------------------------------------------------------------------
 (defn session-state [^TextEditorPane edit-area]
@@ -87,7 +88,7 @@
         closable? (if (not (= state :clean))
                     (let [rc (JOptionPane/showConfirmDialog (:frame app) "Save session?"
                                                             nil JOptionPane/YES_NO_CANCEL_OPTION
-                                                            (:icon-64 app))]
+                                                            JOptionPane/QUESTION_MESSAGE (:icon-64 app))]
                       (condp = rc
                         JOptionPane/OK_OPTION (if (save-file app) true false)
                         JOptionPane/NO_OPTION true
@@ -104,6 +105,7 @@
   (let [^TextEditorPane edit-area (:edit-area app)]
     (if (close-session app)
       (do
+        (repl/restart-repl app true)
         (.setText edit-area text)
         (repl/send-to-repl app text true)
         (.requestFocus edit-area)))))
@@ -119,7 +121,8 @@
               fp (.getParent f)
               fl (FileLocation/create f)]
           (prefs/pput "current-dir" fp)
-          (.load (:edit-area app) fl "UTF-8")))
+          (.load (:edit-area app) fl "UTF-8")
+          (repl/restart-repl app true)))
       (.addFileToFileHistory ^RecentFilesMenu (:recent-menu app) (.getFileFullPath (:edit-area app)))
       (set-edit-label app))))
 
@@ -129,7 +132,9 @@
       (if (.isLocalAndExists fl)
         (do
           (.load (:edit-area app) fl "UTF-8")
-          (.setText (:edit-label app) (str "Editor - " (.getFileName (:edit-area app)))))
+          (repl/restart-repl app true)
+          (set-edit-label app)
+          #_(.setText (:edit-label app) (str "Editor - " (.getFileName (:edit-area app)))))
         (JOptionPane/showMessageDialog (:frame app) (str path " doesn't exist anymore.")
                                        nil JOptionPane/YES_OPTION (:icon-64 app))))))
 
@@ -178,13 +183,13 @@
 (defn man [topic]
   (browse/browse-url (str consts/lwb-wiki topic)))
 
-;; About
+;; About ------------------------------------------------------------------------
 (defn about-dlg [app]
   (JOptionPane/showMessageDialog (:frame app) consts/about
                                  "About lwb-gui" JOptionPane/INFORMATION_MESSAGE
                                  (:icon-128 app)))
 
-;; Exit ------------------------------------------------------------------------
+;; Exit -------------------------------------------------------------------------
 (defn exit [app]
   ; Close current session
   (let [^TextEditorPane edit-area (:edit-area app)

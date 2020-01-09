@@ -276,9 +276,6 @@
     app))
 
 ; Menu ------------------------------------------------------------------------
-
-
-
 (defn make-menus [app]
   (when (utils/is-mac)
     (System/setProperty "apple.laf.useScreenMenuBar" "true")
@@ -300,7 +297,7 @@
                          (.add ^RecentFilesMenu (:recent-menu app))
                          (utils/add-menu-item "Save" "S" "cmd1 S" #(actions/save-file app))
                          (utils/add-menu-item "Save As.." "A" "cmd1 shift S" #(actions/save-as-file app))
-                         (utils/add-menu-item "Close" "C" "cmd1 C" #(actions/close-session app))
+                         (utils/add-menu-item "Close" "" nil #(actions/close-session app))
                          )]
       (when-not (utils/is-mac)
         (utils/add-menu-item session-menu "Exit" "X" nil #(actions/exit' app)))
@@ -331,7 +328,7 @@
                       (utils/add-menu-item "Evaluate current sexpression" "C" "cmd2 shift C" #(repl/send-selected-to-repl app))
                       (utils/add-menu-item "Evaluate top sexpression" "T" "cmd2 shift T" #(repl/send-top-sexpr-to-repl app))
                       (utils/add-menu-item "Evaluate entire file" "F" "cmd2 shift F" #(repl/send-doc-to-repl app))
-                      (utils/add-menu-item "Clear output" "C" "cmd1 shift C" #(.setText (app :repl-area) ""))
+                      (utils/add-menu-item "Clear output" "C" "cmd1 shift C" #(.setText (:repl-area app) ""))
                       (utils/add-menu-item "Restart REPL" "R" "cmd1 shift R" #(repl/restart-repl app)))]
       (.add menu-bar repl-menu))
     ;; Options

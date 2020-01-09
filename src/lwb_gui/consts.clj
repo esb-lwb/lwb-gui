@@ -61,14 +61,16 @@
     \newline
     ["<html><strong>Logic Workbench GUI</strong>"
      (str "Rev " rev)
-     "uses Logic Workbench lwb Revision 2.1.3"
+     "uses Logic Workbench lwb Revision 2.1.4"
      "Project home: https:/github.com/esb-lwb/lwb-gui"
+     "Copyright © 2014 - 2020, Burkhardt Renz"
      ""
      "<html>Licensed under <strong>Eclipse Public License 1.0</strong><br />"
      "<html>Written in <strong>Clojure</strong> (clojure.org)<br />"
      "<html>based on the project <strong>Clooj</strong> (github.com/arthuredelstein/clooj)<br />"
      ""
      "<html>Library used:"
-     "RSyntaxTextArea (github.com/bobbylight/RSyntaxTextArea)"]))
+     "RSyntaxTextArea (github.com/bobbylight/RSyntaxTextArea)"
+     "Copyright © 2019, Robert Futrell"]))
 
     

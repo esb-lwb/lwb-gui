@@ -1,5 +1,5 @@
-(defproject lwb-gui "0.9.1"
-  :date "2019-12-23"
+(defproject lwb-gui "0.9.2-BETA"
+  :date "2020-01-09"
   :description "A simple GUI for the Logic Workbench"
   :url "https://guthub.com/esb-lwb/lwb-gui"
   :license {:name "Eclipse Public License"

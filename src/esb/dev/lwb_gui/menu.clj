@@ -180,6 +180,6 @@
                      (menu :text "REPL" :items [curr-sexpr-action top-sexpr-action file-action clear-action restart-action])
                      (menu :text "Options" :items [increase-action decrease-action settings-action])
                      (menu :text "Manual" :items [man-prop-action man-pred-action man-ltl-action man-nd-action man-cl-action])]
-        menu-items (if true (not (consts/is-mac)) (into [(menu :text "lwb-gui" :items [about-action :separator exit-action])] menu-items')
+        menu-items (if (not (consts/is-mac)) (into [(menu :text "lwb-gui" :items [about-action :separator exit-action])] menu-items')
                             menu-items')]
     (menubar :items (seq menu-items))))

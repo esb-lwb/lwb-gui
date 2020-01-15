@@ -25,7 +25,9 @@
 ;; That's the reason to split the handling of the frame position and the
 ;; location of the divider.
 
-(defn get-shapes [components]
+(defn get-shapes 
+  "Gets Shapes of main window and splitter."
+  [components]
   (for [comp components]
     (condp instance? comp
       Window [:window {:x (.getX comp) :y (.getY comp)
@@ -33,23 +35,31 @@
       JSplitPane [:split-pane {:location (.getDividerLocation comp)}]
       nil)))
 
-(defn widget-seq [^Component comp]
+(defn widget-seq 
+  "Tree seq of components of app."
+  [^Component comp]
   (filter #(or (instance? Window %) (instance? JSplitPane %))
           (tree-seq #(instance? Container %)
                     #(seq (.getComponents %))
                     comp)))
 
 ; we know the exact structure of @window-shape
-(defn get-divider-location []
+(defn get-divider-location 
+  "Divider location is in the second shape."
+  []
   (let [shape (second @window-shape)]
     (:location (second shape))))
 
-(defn set-frame-size [^JFrame f]
+(defn set-frame-size 
+  "Bounds of tne main window is in the first shape."
+  [^JFrame f]
   (let [shape (first @window-shape)]
     (if (some? shape)
       (let [{:keys [x y w h]} (second shape)]
         (.setBounds f x y w h)))))
 
-(defn store-shapes [^JFrame f]
+(defn store-shapes 
+  "Stores the current shapes in the preferences."
+  [^JFrame f]
   (let [components (widget-seq f)]
     (reset! window-shape (get-shapes components))))

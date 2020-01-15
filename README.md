@@ -10,7 +10,7 @@ Just start the app and then open a new session with the Logic Workbench.
 ### Mac OSX
 <code>java -Duser.language=en -Xdock:name=lwb-gui -jar lwb-gui.jar</code>
 
-Unfortunately javapackager in Java 9 doesn't what it should do to make a proper Mac app, 
+Unfortunately javapackager in Java 9 doesn't do what it should do to make a proper Mac app, 
 at least I didn't manage to do this. But there is a work-around:
 
 Download lwb-gui.jar from the release page and lwb.icns from the code page to a directoy {lwb-dir}.
@@ -38,6 +38,8 @@ Eclipse Public License 1.0 (http://opensource.org/licenses/eclipse-1.0.php).
 By using this software in any fashion, you are agreeing to be bound by
 the terms of this license.
 
+lwb-gui uses seesaw which has the same license as lwb-gui.
+
 lwb-gui uses RSyntaxTextArea:
 
 Copyright (c) 2019, Robert Futrell
@@ -64,6 +66,15 @@ LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
 ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+## How to build
+
+1. We need a patched version of RSyntaxTextArea, see https://github.com/esb-dev/RSyntaxTextArea
+
+2. And furthermore a patched version of sessaw, see https://github.com/esb-dev/seesaw
+
+3. Leiningen task uberjar
+
 
 
 

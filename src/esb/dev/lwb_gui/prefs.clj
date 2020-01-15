@@ -1,3 +1,7 @@
+; Copyright (c) 2019 - by Burkhardt Renz 
+; All rights reserved.
+; Eclipse Public License 1.0
+
 (ns esb.dev.lwb-gui.prefs
   (:require [seesaw.pref :refer [preference-atom]])
   (:import (java.awt Window Container Component)

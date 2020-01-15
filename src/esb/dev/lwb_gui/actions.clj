@@ -1,3 +1,7 @@
+; Copyright (c) 2019 - by Burkhardt Renz 
+; All rights reserved.
+; Eclipse Public License 1.0
+
 (ns esb.dev.lwb-gui.actions
   (:require [esb.dev.lwb-gui.consts :as consts]
             [esb.dev.lwb-gui.repl :as repl]
@@ -8,7 +12,11 @@
             [seesaw.chooser :refer [choose-file]]
             [seesaw.core :refer :all]
             [esb.dev.lwb-gui.search :as search])
-  (:import (org.fife.ui.rsyntaxtextarea TextEditorPane FileLocation RSyntaxTextAreaEditorKit$ToggleCommentAction RSyntaxTextAreaEditorKit$InsertTabAction RSyntaxTextAreaEditorKit$DecreaseIndentAction)
+  (:import (org.fife.ui.rsyntaxtextarea TextEditorPane 
+                                        FileLocation 
+                                        RSyntaxTextAreaEditorKit$ToggleCommentAction 
+                                        RSyntaxTextAreaEditorKit$InsertTabAction 
+                                        RSyntaxTextAreaEditorKit$DecreaseIndentAction)
            (java.io File)
            (org.fife.ui.utils RecentFilesMenu)
            (javax.swing.text Utilities)))

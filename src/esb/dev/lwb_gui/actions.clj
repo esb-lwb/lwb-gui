@@ -18,7 +18,7 @@
                                         RSyntaxTextAreaEditorKit$InsertTabAction 
                                         RSyntaxTextAreaEditorKit$DecreaseIndentAction)
            (java.io File)
-           (org.fife.ui.utils RecentFilesMenu)
+           (org.fife.ui.utils RecentFilesMenu Toast)
            (javax.swing.text Utilities)))
 
 ;; Session
@@ -78,7 +78,9 @@
         state (session-state edit-area)]
     (case state
       :clean true
-      :save (do (.save edit-area) true)
+      :save (do (.save edit-area) 
+                (Toast/displayToast root "Saved")
+                true)
       :save-as (save-as-file root))))
 
 (defn close-session 

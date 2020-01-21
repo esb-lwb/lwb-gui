@@ -20,7 +20,8 @@
            (java.awt.event WindowAdapter)
            (java.awt Desktop)
            (java.awt.desktop QuitHandler QuitResponse AboutHandler)
-           (org.fife.ui.rsyntaxtextarea TextEditorPane))
+           (org.fife.ui.rsyntaxtextarea TextEditorPane)
+           (org.fife.io UnicodeWriter))
   (:gen-class))
 
 ; Searchbar
@@ -100,8 +101,9 @@
 
 (defn adapt-reditpane
   "Settings for the edit area."
-  [r]
-  (.setCurrentLineHighlightColor ^TextEditorPane r (color/color :whitesmoke)))
+  [^TextEditorPane r]
+  (UnicodeWriter/setWriteUtf8BOM false)
+  (.setCurrentLineHighlightColor r (color/color :whitesmoke)))
 
 (defn map-keys
   "Key mapping for the main window."

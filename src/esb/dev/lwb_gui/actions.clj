@@ -243,7 +243,7 @@
   [root]
   (let [edit-area (select root [:#edit-area])
         repl-area (select root [:#repl-area])
-        txt (if-let [text (selection edit-area)]
+        txt (if-let [text (.getSelectedText edit-area)]
               text
               (sexpr/get-current-sexpr edit-area))]
     (if (or (nil? txt) (not (sexpr/parens-balanced? txt)))
@@ -275,7 +275,6 @@
   (let [repl-area (select root [:#repl-area])]
     (.append repl-area (str "--- This is the Clojure REPL ---\n"))
     (let [repl-map (repl/launch-repl repl-area)]
-      (.append repl-area (print repl-map))
       (reset! repl/repl-state repl-map))))
 
 (defn stop-repl
@@ -283,8 +282,8 @@
   [root]
   (let [repl-area (select root [:#repl-area])]
     (.append repl-area "\n--- Bye, shutdown of Clojure REPL  ---\n")
-    (.append repl-area (print @repl/repl-state))
-    (when-let [repl-map @repl/repl-state] (repl/close repl-map))))
+    (when-let [repl-map @repl/repl-state] 
+      (repl/close repl-map))))
 
 (defn restart-repl
   "Restarts REPL. If clear? clears output."

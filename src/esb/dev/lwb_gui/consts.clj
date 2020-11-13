@@ -1,4 +1,4 @@
-; Copyright (c) 2019 - by Burkhardt Renz 
+; Copyright (c) 2019 - 2020 by Burkhardt Renz 
 ; All rights reserved.
 ; Eclipse Public License 1.0
 
@@ -77,7 +77,7 @@
     \newline
     ["<html><strong>Logic Workbench GUI</strong>"
      (str "Rev " rev)
-     "uses Logic Workbench lwb Revision 2.1.4"
+     "uses Logic Workbench lwb Revision 2.2.0"
      "Project home: https:/github.com/esb-lwb/lwb-gui"
      "Copyright © 2014 - 2020, Burkhardt Renz"
      ""

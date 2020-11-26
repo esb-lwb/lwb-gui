@@ -77,7 +77,7 @@
     \newline
     ["<html><strong>Logic Workbench GUI</strong>"
      (str "Rev " rev)
-     "uses Logic Workbench lwb Revision 2.2.0"
+     "uses Logic Workbench lwb Revision 2.2.1"
      "Project home: https:/github.com/esb-lwb/lwb-gui"
      "Copyright © 2014 - 2020, Burkhardt Renz"
      ""

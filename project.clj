@@ -1,5 +1,5 @@
-(defproject lwb-gui "1.0.1"
-  :date "2020-11-26"
+(defproject lwb-gui "1.0.3"
+  :date "2021-06-29"
   :description "A simple GUI for the Logic Workbench"
   :url "https://guthub.com/esb-lwb/lwb-gui"
   :license {:name "Eclipse Public License"
@@ -12,7 +12,7 @@
                  [j18n "1.0.2"]
                  [rsyntaxtextarea/rsyntaxtextarea "3.0.9-esb-dev"]
                  [seesaw "1.5.1-esb-dev"]
-                 [lwb/lwb "2.2.1"]] ;; update consts/about too!
+                 [lwb/lwb "2.2.4"]] ;; update consts/about too!
   :main esb.dev.lwb-gui.main
   :profiles {:uberjar  {:aot :all}}
   :uberjar-name "lwb-gui.jar")

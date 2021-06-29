@@ -77,9 +77,9 @@
     \newline
     ["<html><strong>Logic Workbench GUI</strong>"
      (str "Rev " rev)
-     "uses Logic Workbench lwb Revision 2.2.1"
+     "uses Logic Workbench lwb Revision 2.2.4"
      "Project home: https:/github.com/esb-lwb/lwb-gui"
-     "Copyright © 2014 - 2020, Burkhardt Renz"
+     "Copyright © 2014 - 2021, Burkhardt Renz"
      ""
      "<html>Licensed under Eclipse Public License 1.0<br />"
      "<html>Written in <strong>Clojure</strong> (clojure.org)<br />"
